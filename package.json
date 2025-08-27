@@ -1,0 +1,47 @@
+{
+  "name": "kale-markets",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "setup": "echo 'Using Stellar testnet; no EVM setup'",
+    "deploy": "echo 'Soroban deployment not configured'",
+    "compile": "echo 'No Solidity compilation'"
+  },
+  "dependencies": {
+    "@creit.tech/stellar-wallets-kit": "^1.9.1",
+    "@openzeppelin/contracts": "^5.4.0",
+    "@react-hook/window-size": "^3.1.1",
+    "@reduxjs/toolkit": "^2.8.2",
+    "@stellar/freighter-api": "^5.0.0",
+    "@tanstack/react-query": "^5.81.5",
+    
+    "idb": "^8.0.3",
+    "next": "15.3.5",
+    "react": "^19.0.0",
+    "react-confetti": "^6.4.0",
+    "react-dom": "^19.0.0",
+    "react-icons": "^5.5.0",
+    "react-redux": "^9.2.0",
+    "stellar-sdk": "^13.3.0",
+    "styled-components": "^6.1.19",
+    
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    
+    "@types/node": "^20.19.9",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/uuid": "^10.0.0",
+    "babel-plugin-module-resolver": "^5.0.0",
+    "eslint": "^9",
+    "eslint-config-next": "15.3.5",
+    
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}
