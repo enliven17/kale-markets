@@ -1,4 +1,0 @@
-
-{"chainId":50312,"type":"DEPLOYMENT_INITIALIZE"}
-{"artifactId":"MinimalContract#MinimalContract","constructorArgs":[],"contractName":"MinimalContract","dependencies":[],"from":"0x71197e7a1ca5a2cb2ad82432b924f69b1e3db123","futureId":"MinimalContract#MinimalContract","futureType":"NAMED_ARTIFACT_CONTRACT_DEPLOYMENT","libraries":{},"strategy":"basic","strategyConfig":{},"type":"DEPLOYMENT_EXECUTION_STATE_INITIALIZE","value":{"_kind":"bigint","value":"0"}}
-{"futureId":"MinimalContract#MinimalContract","networkInteraction":{"data":"0x02980160808060405234601857602a600055607a9081601e8239f35b600080fdfe6080806040526004361015601257600080fd5b60003560e01c633fa4f24514602657600080fd5b34603f576000366003190112603f576020906000548152f35b600080fdfea2646970667358221220becaa8d78df14fe8129632682a22f9bdb4122fba27acf91384c139a934812fdd64736f6c634300081c0033","id":1,"type":"ONCHAIN_INTERACTION","value":{"_kind":"bigint","value":"0"}},"type":"NETWORK_INTERACTION_REQUEST"}

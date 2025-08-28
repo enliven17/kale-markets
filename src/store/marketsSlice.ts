@@ -1,11 +1,8 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { Market, Bet, MarketStatus, BetSide } from "@/types/market";
-import { AppDispatch, RootState } from './index';
-
-import { createAsyncThunk } from '@reduxjs/toolkit';
-import solidityClient from '@/api/solidityClient';
-import { creativeSeedMarkets } from '@/constants/seedMarkets';
+import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import { Market, Bet, BetSide } from "@/types/market";
+import { creativeSeedMarkets } from "@/constants/seedMarkets";
 import seedTxs from '@/constants/seedTxs.json';
+import { RootState } from './index';
 
 // Demo verileri kaldırıldı, başlangıç boş
 const initialMarkets: Market[] = [];
@@ -20,7 +17,7 @@ interface ClaimableReward {
 interface MarketsState {
   markets: Market[];
   claimableRewards: ClaimableReward[];
-  userDefiQ: Record<string, number>; // address -> DEFiq puanı
+  userDefiQ: Record<string, number>;
 }
 
 // localStorage'dan markets yükle
@@ -190,66 +187,6 @@ const marketsSlice = createSlice({
 });
 
 export const { addMarket, addBet, closeMarket, claimReward, setUserDefiQ } = marketsSlice.actions;
-
-// On-chain marketleri çekip listeye yaz (txHash dahil)
-export const syncOnChainMarkets = createAsyncThunk(
-  'markets/syncOnChainMarkets',
-  async (_, { dispatch, getState }) => {
-    const onchain = await solidityClient.fetchOnChainMarkets();
-    // DEMO verisini tamamen zincir verisiyle değiştir
-    const mapped: Market[] = onchain.map(m => ({
-      id: String(m.id),
-      title: m.title,
-      description: m.description,
-      creatorId: m.creator || 'onchain',
-      createdAt: m.createdAt * 1000,
-      closesAt: m.closesAt * 1000,
-      initialPool: 0,
-      minBet: 0,
-      maxBet: 0,
-      status: 'open',
-      bets: [],
-      txHash: m.txHash,
-    }));
-    // localStorage'daki bahisleri geri yükle
-    try {
-      const stored = loadMarketsFromStorage();
-      if (stored && Array.isArray(stored)) {
-        const betMap: Record<string, any[]> = {};
-        stored.forEach((sm: any) => {
-          if (Array.isArray(sm.bets) && sm.bets.length) betMap[sm.id] = sm.bets;
-        });
-        mapped.forEach(m => {
-          if (betMap[m.id]) m.bets = betMap[m.id];
-        });
-      }
-    } catch {}
-    dispatch(marketsSlice.actions.setMarkets(mapped));
-  }
-);
-
-// Marketi kapatıp ödülleri otomatik dağıtan thunk
-export const closeMarketAndDistributeRewards = createAsyncThunk(
-  'markets/closeMarketAndDistributeRewards',
-  async ({ marketId, result }: { marketId: string; result: BetSide }, { dispatch, getState }) => {
-    // 1. Marketi kapat
-    dispatch(closeMarket({ marketId, result }));
-    // 2. Kazananlara ödül miktarını ekle
-    const state = getState() as RootState;
-    const market = state.markets.markets.find(m => m.id === marketId);
-    if (!market) return;
-    const totalPool = market.initialPool + market.bets.reduce((sum, b) => sum + b.amount, 0);
-    const winners = market.bets.filter(b => b.side === result);
-    const totalWinnerBet = winners.reduce((sum, b) => sum + b.amount, 0);
-    if (totalWinnerBet > 0) {
-              winners.forEach(bet => {
-          const pay = (bet.amount / totalWinnerBet) * totalPool;
-          // Note: Rewards are now handled by smart contract
-          console.log(`Reward calculated for ${bet.userId}: ${pay} ETH`);
-        });
-    }
-  }
-);
 
 export default marketsSlice.reducer;
 export type { ClaimableReward }; 
