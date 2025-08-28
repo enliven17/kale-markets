@@ -4,10 +4,12 @@ import { Market } from "@/types/market";
 import { useState } from "react";
 import { FaClock, FaCheckCircle, FaTimesCircle, FaCoins, FaUsers, FaCalendarAlt, FaChartLine } from 'react-icons/fa';
 import { useWalletConnection } from '@/hooks/useWalletConnection';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { addBet } from '@/store/marketsSlice';
 import { submitKalePaymentOnMainnet } from '@/api/kalePayment';
 import { getKaleTreasuryAddress } from '@/config/stellar';
+import type { RootState } from '@/store';
+import type { Market, BetSide } from '@/types/market';
 
 interface Props {
   market: Market;
@@ -179,15 +181,24 @@ export function MarketCard({ market }: Props) {
               
               // Bet'i gerçek wallet address ile ekle
               if (address) {
-                dispatch(addBet({ 
+                const betData = { 
                   id: `${market.id}-yes-${Date.now()}`, 
                   userId: address, 
                   marketId: String(market.id), 
                   amount: qty * 0.5, 
-                  side: 'yes', 
+                  side: 'yes' as BetSide, 
                   timestamp: Date.now() 
-                })); 
+                };
+                
+                console.log('Creating bet with data:', betData);
+                dispatch(addBet(betData)); 
                 console.log('Bet added to store:', { marketId: market.id, side: 'yes', amount: qty * 0.5, userId: address });
+                
+                // localStorage'ı manuel olarak kontrol et
+                setTimeout(() => {
+                  const stored = localStorage.getItem('kale_user_bets');
+                  console.log('localStorage after bet creation:', stored);
+                }, 100);
               } else {
                 console.error('No wallet address available for bet');
               }
@@ -207,15 +218,24 @@ export function MarketCard({ market }: Props) {
               
               // Bet'i gerçek wallet address ile ekle
               if (address) {
-                dispatch(addBet({ 
+                const betData = { 
                   id: `${market.id}-no-${Date.now()}`, 
                   userId: address, 
                   marketId: String(market.id), 
                   amount: qty * 0.5, 
-                  side: 'no', 
+                  side: 'no' as BetSide, 
                   timestamp: Date.now() 
-                })); 
+                };
+                
+                console.log('Creating bet with data:', betData);
+                dispatch(addBet(betData)); 
                 console.log('Bet added to store:', { marketId: market.id, side: 'no', amount: qty * 0.5, userId: address });
+                
+                // localStorage'ı manuel olarak kontrol et
+                setTimeout(() => {
+                  const stored = localStorage.getItem('kale_user_bets');
+                  console.log('localStorage after bet creation:', stored);
+                }, 100);
               } else {
                 console.error('No wallet address available for bet');
               }
@@ -559,7 +579,7 @@ const UserBetLabel = styled.span`
   letter-spacing: 0.5px;
 `;
 
-const UserBetItem = styled.span<{ $side: 'yes' | 'no' }>`
+const UserBetItem = styled.span<{ $side: BetSide }>`
   color: ${({ theme, $side }) => $side === 'yes' ? theme.colors.accentGreen : theme.colors.accentRed};
   font-size: 12px;
   font-weight: 600;

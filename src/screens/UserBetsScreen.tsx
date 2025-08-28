@@ -22,6 +22,7 @@ export default function UserBetsScreen() {
   const getMyBets = () => {
     console.log('=== getMyBets Debug ===');
     console.log('connectedAddress:', connectedAddress);
+    console.log('Available markets:', markets);
     
     if (!connectedAddress) {
       console.log('No connected address, returning empty array');
@@ -32,7 +33,7 @@ export default function UserBetsScreen() {
     let userBets: any[] = [];
     try {
       const stored = localStorage.getItem('kale_user_bets');
-      console.log('Raw localStorage data:', stored);
+      console.log('Raw localStorage data for kale_user_bets:', stored);
       
       if (stored) {
         const userBetsData = JSON.parse(stored);
@@ -50,7 +51,13 @@ export default function UserBetsScreen() {
     const betsWithMarketInfo = userBets.map(bet => {
       const market = markets.find(m => m.id === bet.marketId);
       console.log('Mapping bet:', bet, 'to market:', market);
-      return { ...bet, market: market || { title: 'Unknown Market', status: 'unknown' } };
+      
+      if (!market) {
+        console.warn('Market not found for bet:', bet.marketId);
+        return { ...bet, market: { title: 'Unknown Market', status: 'unknown' } };
+      }
+      
+      return { ...bet, market };
     });
     
     console.log('Final bets with market info:', betsWithMarketInfo);

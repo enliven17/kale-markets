@@ -64,14 +64,22 @@ function saveUserBetsToStorage(userBets: Record<string, Bet[]>) {
 function getInitialMarkets(): Market[] {
   const stored = loadMarketsFromStorage();
   if (stored && Array.isArray(stored) && stored.length > 0) {
+    console.log('Loading markets from localStorage:', stored);
     return stored;
   }
   
+  console.log('No stored markets found, using seed markets');
   // İlk kez çalıştırılıyorsa seed markets'i kullan
-  return creativeSeedMarkets.map((m) => {
+  const seedMarkets = creativeSeedMarkets.map((m) => {
     const tx = (seedTxs as any[]).find((t) => t.id === m.id)?.tx;
-    return { ...m, txHash: tx } as any;
+    return { ...m, txHash: tx, bets: [] } as any;
   });
+  
+  // localStorage'a seed markets'i kaydet
+  saveMarketsToStorage(seedMarkets);
+  console.log('Seed markets saved to localStorage');
+  
+  return seedMarkets;
 }
 
 const initialState: MarketsState = {
