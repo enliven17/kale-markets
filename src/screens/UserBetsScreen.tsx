@@ -18,9 +18,52 @@ export default function UserBetsScreen() {
     return state.markets.userDefiQ[connectedAddress] || 0;
   });
 
-  // Kullanıcının tüm bahisleri
-  const myBets = connectedAddress ? markets.flatMap(m => m.bets.filter(b => b.userId === connectedAddress).map(b => ({ ...b, market: m }))) : [];
-
+    // Kullanıcının tüm bahisleri (localStorage'dan + Redux'tan)
+  const getMyBets = () => {
+    console.log('=== getMyBets Debug ===');
+    console.log('connectedAddress:', connectedAddress);
+    
+    if (!connectedAddress) {
+      console.log('No connected address, returning empty array');
+      return [];
+    }
+    
+    // localStorage'dan user bets yükle
+    let userBets: any[] = [];
+    try {
+      const stored = localStorage.getItem('kale_user_bets');
+      console.log('Raw localStorage data:', stored);
+      
+      if (stored) {
+        const userBetsData = JSON.parse(stored);
+        console.log('Parsed localStorage data:', userBetsData);
+        userBets = userBetsData[connectedAddress] || [];
+        console.log('User bets for address:', userBets);
+      } else {
+        console.log('No data in localStorage for kale_user_bets');
+      }
+    } catch (e) {
+      console.warn('Failed to load user bets from localStorage:', e);
+    }
+    
+    // Redux'tan market bilgilerini al ve bet'leri birleştir
+    const betsWithMarketInfo = userBets.map(bet => {
+      const market = markets.find(m => m.id === bet.marketId);
+      console.log('Mapping bet:', bet, 'to market:', market);
+      return { ...bet, market: market || { title: 'Unknown Market', status: 'unknown' } };
+    });
+    
+    console.log('Final bets with market info:', betsWithMarketInfo);
+    console.log('=== End getMyBets Debug ===');
+    
+    return betsWithMarketInfo;
+  };
+  
+  const myBets = getMyBets();
+  
+  // Kullanıcının toplam bahis hacmi
+  const totalBetVolume = myBets.reduce((sum, bet) => sum + bet.amount, 0);
+  
   // Kazanılan bahisler (ödül claim edilebilir veya edildi)
   const myRewards = connectedAddress ? rewards.filter(r => r.userId === connectedAddress) : [];
 
@@ -48,11 +91,10 @@ export default function UserBetsScreen() {
             <StatLabel><FaBrain style={{marginRight: 6, color: '#7f5af0'}}/>DEFiq</StatLabel>
             <StatValue>{defiQ}</StatValue>
           </StatItem>
-          {/* Balance ile ilgili kodu kaldırıyorum */}
-          {/* <StatItem title="System Balance">
-            <StatLabel><FaCoins style={{marginRight: 6, color: '#00d4ff'}}/>Balance</StatLabel>
-            <StatValue>{balance.toFixed(4)} ETH</StatValue>
-          </StatItem> */}
+          <StatItem title="Total Bet Volume">
+            <StatLabel><FaCoins style={{marginRight: 6, color: '#00d4ff'}}/>Volume</StatLabel>
+            <StatValue>{totalBetVolume.toFixed(2)} KALE</StatValue>
+          </StatItem>
         </Stats>
         <BalanceActions>
           
@@ -96,7 +138,7 @@ export default function UserBetsScreen() {
                   
                   <BetDetail>
                     <DetailLabel>Amount</DetailLabel>
-                    <DetailValue $amount>{bet.amount} ETH</DetailValue>
+                    <DetailValue $amount>{bet.amount} KALE</DetailValue>
                   </BetDetail>
                   
                   <BetDetail>
@@ -154,7 +196,7 @@ export default function UserBetsScreen() {
                   
                   <RewardDetail>
                     <DetailLabel>Amount</DetailLabel>
-                    <DetailValue $reward>{r.amount.toFixed(4)} ETH</DetailValue>
+                    <DetailValue $reward>{r.amount.toFixed(4)} KALE</DetailValue>
                   </RewardDetail>
                 </RewardDetails>
               </RewardCard>

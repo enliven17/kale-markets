@@ -1,9 +1,13 @@
 import styled from "styled-components";
 import { Market } from "@/types/market";
-import Link from "next/link";
+// Link kaldırıldı; kart detay sayfasına yönlendirme yok
 import { useState } from "react";
-import { FaClock, FaCheckCircle, FaTimesCircle, FaCoins, FaUsers, FaCalendarAlt, FaArrowRight } from 'react-icons/fa';
+import { FaClock, FaCheckCircle, FaTimesCircle, FaCoins, FaUsers, FaCalendarAlt, FaChartLine } from 'react-icons/fa';
 import { useWalletConnection } from '@/hooks/useWalletConnection';
+import { useDispatch } from 'react-redux';
+import { addBet } from '@/store/marketsSlice';
+import { submitKalePaymentOnMainnet } from '@/api/kalePayment';
+import { getKaleTreasuryAddress } from '@/config/stellar';
 
 interface Props {
   market: Market;
@@ -13,15 +17,13 @@ interface Props {
 
 
 export function MarketCard({ market }: Props) {
-  const { isConnected } = useWalletConnection();
+  const { isConnected, address } = useWalletConnection();
+  const [qty, setQty] = useState<number>(1);
+  const [loading, setLoading] = useState<false | 'yes' | 'no'>(false);
+  const dispatch = useDispatch();
 
-  // Kartın boş alanına tıklanınca detay sayfasına yönlendir
-  const handleCardClick = (e: React.MouseEvent) => {
-    // Buton'a tıklandığında yönlendirme yapma
-    const target = e.target as HTMLElement;
-    if (target.tagName === "BUTTON" || target.closest('button')) return;
-    window.location.href = `/market/${market.id}`;
-  };
+  // Kart tıklamasında yönlendirme kaldırıldı
+  const handleCardClick = (_e: React.MouseEvent) => {};
 
   const getStatusIcon = () => {
     if (market.status === "resolved") {
@@ -41,9 +43,47 @@ export function MarketCard({ market }: Props) {
   const totalBets = market.bets.length;
   const timeLeft = market.closesAt - Date.now();
   const daysLeft = Math.ceil(timeLeft / (1000 * 60 * 60 * 24));
+  const yesSum = market.bets.filter(b => b.side === 'yes').reduce((s, b) => s + b.amount, 0);
+  const noSum = market.bets.filter(b => b.side === 'no').reduce((s, b) => s + b.amount, 0);
+  const volume = yesSum + noSum;
+  const yesProb = volume > 0 ? Math.round((yesSum / volume) * 100) : 50;
+  
+  // User's bets on this market (from localStorage + Redux)
+  const getUserBets = () => {
+    if (!address) return [];
+    
+    // localStorage'dan user bets yükle
+    let userBets: any[] = [];
+    try {
+      const stored = localStorage.getItem('kale_user_bets');
+      if (stored) {
+        const userBetsData = JSON.parse(stored);
+        userBets = userBetsData[address] || [];
+      }
+    } catch (e) {
+      console.warn('Failed to load user bets from localStorage:', e);
+    }
+    
+    // Bu market için olan bet'leri filtrele
+    return userBets.filter(bet => bet.marketId === market.id);
+  };
+  
+  const userBets = getUserBets();
+  const userYesBets = userBets.filter(b => b.side === 'yes').reduce((s, b) => s + b.amount, 0);
+  const userNoBets = userBets.filter(b => b.side === 'no').reduce((s, b) => s + b.amount, 0);
+
+  const explorerTxUrl = market.txHash
+    ? `https://stellar.expert/explorer/testnet/tx/${market.txHash}`
+    : undefined;
+  const shortTx = market.txHash ? `${market.txHash.slice(0, 6)}...${market.txHash.slice(-4)}` : 'contract';
 
   return (
     <Card onClick={handleCardClick}>
+      {market.txHash && explorerTxUrl && (
+        <TxBadge onClick={(e) => e.stopPropagation()}>
+          <a href={explorerTxUrl} target="_blank" rel="noopener noreferrer">TX: {shortTx}</a>
+        </TxBadge>
+      )}
       <CardHeader>
         <StatusBadge $status={getStatusColor()}>
           {getStatusIcon()}
@@ -64,19 +104,17 @@ export function MarketCard({ market }: Props) {
         </TimeLeft>
       </CardHeader>
       <CardContent>
-        <Link href={`/market/${market.id}`}>
-          <div style={{ cursor: "pointer" }}>
-            <Title>{market.title}</Title>
-            <Description>{market.description}</Description>
-          </div>
-        </Link>
+        <div style={{ cursor: "default" }}>
+          <Title>{market.title}</Title>
+          <Description>{market.description}</Description>
+        </div>
         <StatsRow>
           <Stat>
             <StatIcon>
               <FaCoins />
             </StatIcon>
             <StatContent>
-              <StatValue>{totalPool.toFixed(2)} ETH</StatValue>
+              <StatValue>{totalPool.toFixed(2)} KALE</StatValue>
               <StatLabel>Total Pool</StatLabel>
             </StatContent>
           </Stat>
@@ -89,28 +127,114 @@ export function MarketCard({ market }: Props) {
               <StatLabel>Bets</StatLabel>
             </StatContent>
           </Stat>
+          <Stat>
+            <StatIcon>
+              <FaChartLine />
+            </StatIcon>
+            <StatContent>
+              <StatValue>{volume.toFixed(2)} KALE</StatValue>
+              <StatLabel>Volume</StatLabel>
+            </StatContent>
+          </Stat>
         </StatsRow>
+        
+        {/* User's bets on this market */}
+        {userBets.length > 0 && (
+          <UserBetsRow>
+            <UserBetLabel>Your Bets:</UserBetLabel>
+            {userYesBets > 0 && (
+              <UserBetItem $side="yes">
+                <span>YES: {userYesBets.toFixed(2)} KALE</span>
+              </UserBetItem>
+            )}
+            {userNoBets > 0 && (
+              <UserBetItem $side="no">
+                <span>NO: {userNoBets.toFixed(2)} KALE</span>
+              </UserBetItem>
+            )}
+          </UserBetsRow>
+        )}
         <InfoRow>
           <Info>
-            <InfoLabel>Min/Max Bet</InfoLabel>
-            <InfoValue>{market.minBet} / {market.maxBet} ETH</InfoValue>
+            <InfoLabel>YES Price</InfoLabel>
+            <InfoValue>0.5 KALE</InfoValue>
           </Info>
           <Info>
-            <InfoLabel>Initial Pool</InfoLabel>
-            <InfoValue>{market.initialPool} ETH</InfoValue>
+            <InfoLabel>NO Price</InfoLabel>
+            <InfoValue>0.5 KALE</InfoValue>
           </Info>
         </InfoRow>
+
+        <BuyRow>
+          <QtyInput type="number" min={1} value={qty} onChange={(e) => setQty(Math.max(1, Number(e.target.value)))} />
+          <BuyButton disabled={!isConnected || loading !== false} onClick={async (e) => { 
+            e.stopPropagation(); 
+            try { 
+              setLoading('yes'); 
+              await submitKalePaymentOnMainnet({ 
+                destination: getKaleTreasuryAddress(), 
+                amount: (qty * 0.5).toFixed(7), 
+                memoText: `market:${market.id}:yes` 
+              }); 
+              
+              // Bet'i gerçek wallet address ile ekle
+              if (address) {
+                dispatch(addBet({ 
+                  id: `${market.id}-yes-${Date.now()}`, 
+                  userId: address, 
+                  marketId: String(market.id), 
+                  amount: qty * 0.5, 
+                  side: 'yes', 
+                  timestamp: Date.now() 
+                })); 
+                console.log('Bet added to store:', { marketId: market.id, side: 'yes', amount: qty * 0.5, userId: address });
+              } else {
+                console.error('No wallet address available for bet');
+              }
+            } finally { 
+              setLoading(false); 
+            } 
+          }}>Buy YES</BuyButton>
+          <BuyButton disabled={!isConnected || loading !== false} onClick={async (e) => { 
+            e.stopPropagation(); 
+            try { 
+              setLoading('no'); 
+              await submitKalePaymentOnMainnet({ 
+                destination: getKaleTreasuryAddress(), 
+                amount: (qty * 0.5).toFixed(7), 
+                memoText: `market:${market.id}:no` 
+              }); 
+              
+              // Bet'i gerçek wallet address ile ekle
+              if (address) {
+                dispatch(addBet({ 
+                  id: `${market.id}-no-${Date.now()}`, 
+                  userId: address, 
+                  marketId: String(market.id), 
+                  amount: qty * 0.5, 
+                  side: 'no', 
+                  timestamp: Date.now() 
+                })); 
+                console.log('Bet added to store:', { marketId: market.id, side: 'no', amount: qty * 0.5, userId: address });
+              } else {
+                console.error('No wallet address available for bet');
+              }
+            } finally { 
+              setLoading(false); 
+            } 
+          }}>Buy NO</BuyButton>
+        </BuyRow>
+        <QuickRow>
+          {[1,5,10,20].map(v => (
+            <QuickBtn key={v} onClick={(e)=>{ e.stopPropagation(); setQty(v); }}>{v}</QuickBtn>
+          ))}
+        </QuickRow>
       </CardContent>
       <CardFooter>
-        <ButtonRow>
-          <SeeDetailsButton onClick={(e) => {
-            e.stopPropagation();
-            window.location.href = `/market/${market.id}`;
-          }}>
-            <span>See Details</span>
-            <FaArrowRight />
-          </SeeDetailsButton>
-        </ButtonRow>
+        <ProbRow>
+          <ProbLabel>Estimated YES probability</ProbLabel>
+          <ProbValue>{yesProb}%</ProbValue>
+        </ProbRow>
       </CardFooter>
     </Card>
   );
@@ -139,6 +263,24 @@ const Card = styled.div`
   @media (max-width: 600px) {
     border-radius: 16px;
   }
+`;
+
+const TxBadge = styled.div`
+  position: absolute;
+  top: 14px; /* biraz daha aşağıda */
+  left: 50%;
+  transform: translateX(-50%);
+  background: ${({ theme }) => theme.colors.primary};
+  color: #fff;
+  border-radius: 10px;
+  padding: 4px 10px;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  z-index: 3;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  border: 1px solid ${({ theme }) => `${theme.colors.card}`};
+  a { color: #fff; text-decoration: none; }
 `;
 
 const CardHeader = styled.div`
@@ -331,55 +473,100 @@ const CardFooter = styled.div`
   }
 `;
 
-const ButtonRow = styled.div`
-  display: flex;
+const BuyRow = styled.div`
+  display: grid;
+  grid-template-columns: 120px 1fr 1fr;
   gap: 12px;
-  @media (max-width: 600px) {
-    gap: 8px;
-  }
+  margin-top: 16px;
 `;
 
-const SeeDetailsButton = styled.button`
-  flex: 1;
+const QtyInput = styled.input`
+  padding: 12px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 10px;
+  background: ${({ theme }) => theme.colors.background};
+  color: ${({ theme }) => theme.colors.text};
+`;
+
+const BuyButton = styled.button`
   background: ${({ theme }) => theme.colors.primary};
   color: white;
   border: none;
   border-radius: 12px;
-  padding: 14px 20px;
-  font-weight: 600;
+  padding: 12px 16px;
+  font-weight: 700;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+`;
+
+const QuickRow = styled.div`
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-top: 10px;
+`;
+
+const QuickBtn = styled.button`
+  background: ${({ theme }) => theme.colors.card};
+  color: ${({ theme }) => theme.colors.primary};
+  border: 1px solid ${({ theme }) => theme.colors.primary}33;
+  border-radius: 12px;
+  padding: 10px 0;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  width: 100%;
+  &:hover { background: ${({ theme }) => `${theme.colors.primary}15`}; border-color: ${({ theme }) => theme.colors.primary}; }
+`;
+
+const ProbRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
+
+const ProbLabel = styled.span`
+  color: ${({ theme }) => theme.colors.textSecondary};
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+`;
+
+const ProbValue = styled.span`
+  color: ${({ theme }) => theme.colors.primary};
+  font-size: 14px;
+  font-weight: 800;
+`;
+
+const UserBetsRow = styled.div`
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  will-change: transform;
-  transform: translateZ(0);
-  
-  &:hover {
-    background: ${({ theme }) => theme.colors.primary};
-    opacity: 0.9;
-    transform: translateY(-1px) translateZ(0);
-  }
-  
-  &:active {
-    transform: translateY(0) translateZ(0);
-  }
-  
-  svg {
-    font-size: 12px;
-    transition: transform 0.2s ease;
-  }
-  
-  &:hover svg {
-    transform: translateX(2px);
-  }
-  
-  @media (max-width: 600px) {
-    padding: 12px 16px;
-    font-size: 13px;
-  }
+  gap: 12px;
+  margin: 16px 0;
+  padding: 12px;
+  background: ${({ theme }) => theme.colors.background};
+  border-radius: 12px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+`;
+
+const UserBetLabel = styled.span`
+  color: ${({ theme }) => theme.colors.textSecondary};
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+`;
+
+const UserBetItem = styled.span<{ $side: 'yes' | 'no' }>`
+  color: ${({ theme, $side }) => $side === 'yes' ? theme.colors.accentGreen : theme.colors.accentRed};
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  background: ${({ theme, $side }) => $side === 'yes' ? `${theme.colors.accentGreen}20` : `${theme.colors.accentRed}20`};
+  border-radius: 8px;
+  border: 1px solid ${({ theme, $side }) => $side === 'yes' ? theme.colors.accentGreen : theme.colors.accentRed};
 `;
 
 const DisabledButton = styled.button`

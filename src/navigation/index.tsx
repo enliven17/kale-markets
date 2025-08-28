@@ -31,10 +31,8 @@ export function MainNav() {
     <NavBar>
       <FlexRow>
         <LogoBox>
-          <LogoGradient>
-            <span style={{ fontSize: 28, filter: 'drop-shadow(0 2px 8px #7f5af0cc)' }}>🔮</span>
-          </LogoGradient>
-          <span style={{ fontWeight: 700, fontSize: 22, letterSpacing: 1 }}>Kale Markets</span>
+          <LogoImage src="/kalemarkets.png" alt="KALE Market" />
+          <span style={{ fontWeight: 700, fontSize: 22, letterSpacing: 1 }}>KALE Market</span>
         </LogoBox>
         <NavLinks>
           <NavLink href="/" $active={pathname === "/"}>Markets</NavLink>
@@ -90,20 +88,10 @@ const FlexRow = styled.div`
   justify-content: space-between;
 `;
 
-const LogoGradient = styled.div`
-  background: linear-gradient(90deg, #7f5af0 0%, #00d4ff 100%);
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  aspect-ratio: 1 / 1;
-  animation: logoPulse 2.5s infinite alternate;
-  @keyframes logoPulse {
-    0% { filter: brightness(1) drop-shadow(0 2px 8px #7f5af0cc); }
-    100% { filter: brightness(1.15) drop-shadow(0 4px 16px #00d4ffcc); }
-  }
+const LogoImage = styled.img`
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
 `;
 
 const NavLinks = styled.div`

@@ -16,10 +16,17 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Kale Markets",
-  description: "Kale Markets: Prediction markets with KALE on Stellar testnet",
+  title: "KALE Market",
+  description: "KALE Market: Prediction markets with KALE on Stellar",
   icons: {
-    icon: "/umiq-favicon.svg",
+    icon: [
+      { url: "/kalemarkets.png" },
+      { url: "/kalemarkets.png", type: "image/png", sizes: "32x32" },
+      { url: "/kalemarkets.png", type: "image/png", sizes: "192x192" },
+      { url: "/favicon.ico" },
+    ],
+    shortcut: ["/kalemarkets.png", "/favicon.ico"],
+    apple: ["/kalemarkets.png"],
   },
 };
 

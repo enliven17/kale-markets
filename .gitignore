@@ -1,1 +1,34 @@
 node_modules
+.next
+.vercel
+out
+.turbo
+
+# Build
+build/
+dist/
+coverage/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# OS/Editor
+.DS_Store
+*.swp
+.vscode/
+.idea/
+
+# Env
+.env
+.env.*
+
+# Hardhat artifacts
+artifacts/
+cache/
+typechain-types/
+
+# Generated data
+src/constants/seedTxs.json

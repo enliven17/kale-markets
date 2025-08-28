@@ -3,28 +3,12 @@ import { Market, Bet, MarketStatus, BetSide } from "@/types/market";
 import { AppDispatch, RootState } from './index';
 
 import { createAsyncThunk } from '@reduxjs/toolkit';
+import solidityClient from '@/api/solidityClient';
+import { creativeSeedMarkets } from '@/constants/seedMarkets';
+import seedTxs from '@/constants/seedTxs.json';
 
-// Fun sample markets (KALE units). These are preloaded demo markets.
-const now = Date.now();
-const day = 1000 * 60 * 60 * 24;
-const initialMarkets: Market[] = [
-  { id: "1", title: "Will a cat become mayor of any town in 2026?", description: "Any recognized municipality elects or appoints a cat as mayor by Dec 31, 2026.", creatorId: "seed", createdAt: now - day, closesAt: now + 30 * day, initialPool: 250, minBet: 1, maxBet: 500, status: "open", bets: [] },
-  { id: "2", title: "Will pineapple on pizza win an international award?", description: "Any major culinary award honors a pineapple-on-pizza dish by 2026.", creatorId: "seed", createdAt: now - 2 * day, closesAt: now + 60 * day, initialPool: 180, minBet: 1, maxBet: 400, status: "open", bets: [] },
-  { id: "3", title: "Will a robot win a televised dance contest?", description: "A non-humanoid robot wins a televised dance competition by 2026.", creatorId: "seed", createdAt: now - 3 * day, closesAt: now + 90 * day, initialPool: 220, minBet: 1, maxBet: 600, status: "open", bets: [] },
-  { id: "4", title: "Will 'AI-generated song' hit #1 on any global chart?", description: "A primarily AI-generated song reaches #1 on a recognized global music chart.", creatorId: "seed", createdAt: now - 4 * day, closesAt: now + 120 * day, initialPool: 300, minBet: 1, maxBet: 700, status: "open", bets: [] },
-  { id: "5", title: "Will a human run a sub-1:50 marathon (2 legs)?", description: "A novelty event where two runners alternate legs to complete a marathon under 1:50.", creatorId: "seed", createdAt: now - 5 * day, closesAt: now + 150 * day, initialPool: 150, minBet: 1, maxBet: 350, status: "open", bets: [] },
-  { id: "6", title: "Will a pizza be delivered by space balloon?", description: "A documented commercial pizza delivery using a near-space balloon by end of 2026.", creatorId: "seed", createdAt: now - 6 * day, closesAt: now + 180 * day, initialPool: 200, minBet: 1, maxBet: 450, status: "open", bets: [] },
-  { id: "7", title: "Will K-pop collaborate with a whale song album?", description: "A charting album featuring authentic whale song as primary musical element.", creatorId: "seed", createdAt: now - 7 * day, closesAt: now + 200 * day, initialPool: 210, minBet: 1, maxBet: 500, status: "open", bets: [] },
-  { id: "8", title: "Will a selfie from the Moon trend worldwide?", description: "A human-taken selfie on the Moon trends #1 worldwide on any platform.", creatorId: "seed", createdAt: now - 8 * day, closesAt: now + 240 * day, initialPool: 400, minBet: 1, maxBet: 800, status: "open", bets: [] },
-  { id: "9", title: "Will a tomato be CRISPR-named \"Tommy 2.0\"?", description: "A CRISPR-edited tomato cultivar officially named 'Tommy 2.0' by 2027.", creatorId: "seed", createdAt: now - 9 * day, closesAt: now + 300 * day, initialPool: 120, minBet: 1, maxBet: 300, status: "open", bets: [] },
-  { id: "10", title: "Will a dog star in a courtroom drama as a lawyer?", description: "A mainstream TV series casts a dog as an actual lawyer character.", creatorId: "seed", createdAt: now - 10 * day, closesAt: now + 210 * day, initialPool: 260, minBet: 1, maxBet: 550, status: "open", bets: [] },
-  { id: "11", title: "Will a city legalize napping pods on sidewalks?", description: "A city passes an ordinance explicitly permitting temporary sidewalk napping pods.", creatorId: "seed", createdAt: now - 11 * day, closesAt: now + 130 * day, initialPool: 140, minBet: 1, maxBet: 320, status: "open", bets: [] },
-  { id: "12", title: "Will a chess world champion lose to a toaster?", description: "A verified match shows a champion losing to a DIY toaster-computer hybrid.", creatorId: "seed", createdAt: now - 12 * day, closesAt: now + 260 * day, initialPool: 190, minBet: 1, maxBet: 420, status: "open", bets: [] },
-  { id: "13", title: "Will someone 3D-print a habitable treehouse?", description: "A livable treehouse is 3D-printed (majority structure) and certified safe.", creatorId: "seed", createdAt: now - 13 * day, closesAt: now + 280 * day, initialPool: 230, minBet: 1, maxBet: 520, status: "open", bets: [] },
-  { id: "14", title: "Will a meme win a Pulitzer Prize?", description: "Any recognized Pulitzer category awards a meme or meme creator.", creatorId: "seed", createdAt: now - 14 * day, closesAt: now + 320 * day, initialPool: 175, minBet: 1, maxBet: 410, status: "open", bets: [] },
-  { id: "15", title: "Will a viral app only use fax machines?", description: "An app relying primarily on fax communication enters top app charts.", creatorId: "seed", createdAt: now - 15 * day, closesAt: now + 100 * day, initialPool: 160, minBet: 1, maxBet: 380, status: "open", bets: [] },
-  { id: "16", title: "Will KALE be accepted at a salad-only festival?", description: "An official festival accepts KALE token for on-site salad purchases.", creatorId: "seed", createdAt: now - 16 * day, closesAt: now + 170 * day, initialPool: 500, minBet: 1, maxBet: 900, status: "open", bets: [] },
-];
+// Demo verileri kaldırıldı, başlangıç boş
+const initialMarkets: Market[] = [];
 
 interface ClaimableReward {
   userId: string;
@@ -58,15 +42,43 @@ function saveMarketsToStorage(markets: Market[]) {
   } catch (e) {}
 }
 
-// Uygulama başlatılırken localStorage temizle (tam reload veya yeni tab)
-if (typeof window !== 'undefined') {
-  window.addEventListener('load', () => {
-    localStorage.removeItem('kale_markets');
+// localStorage'dan user bets yükle
+function loadUserBetsFromStorage() {
+  if (typeof window === 'undefined') return {};
+  try {
+    const stored = localStorage.getItem('kale_user_bets');
+    return stored ? JSON.parse(stored) : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+// localStorage'a user bets kaydet
+function saveUserBetsToStorage(userBets: Record<string, Bet[]>) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem('kale_user_bets', JSON.stringify(userBets));
+  } catch (e) {}
+}
+
+// Artık localStorage temizlenmiyor; kullanıcı bahisleri kalıcı
+
+// localStorage'dan stored markets yükle veya seed markets kullan
+function getInitialMarkets(): Market[] {
+  const stored = loadMarketsFromStorage();
+  if (stored && Array.isArray(stored) && stored.length > 0) {
+    return stored;
+  }
+  
+  // İlk kez çalıştırılıyorsa seed markets'i kullan
+  return creativeSeedMarkets.map((m) => {
+    const tx = (seedTxs as any[]).find((t) => t.id === m.id)?.tx;
+    return { ...m, txHash: tx } as any;
   });
 }
 
 const initialState: MarketsState = {
-  markets: (typeof window !== 'undefined' && loadMarketsFromStorage()) || initialMarkets,
+  markets: getInitialMarkets(),
   claimableRewards: [],
   userDefiQ: {
     // Demo kullanıcılar için temsili DEFiq puanları
@@ -89,11 +101,41 @@ const marketsSlice = createSlice({
       state.markets = [action.payload, ...state.markets];
       saveMarketsToStorage(state.markets);
     },
+    setMarkets(state, action: PayloadAction<Market[]>) {
+      state.markets = action.payload;
+      saveMarketsToStorage(state.markets);
+    },
     addBet(state, action: PayloadAction<Bet>) {
+      console.log('=== addBet Reducer Debug ===');
+      console.log('Adding bet:', action.payload);
+      console.log('Current markets:', state.markets);
+      
       const market = state.markets.find(m => m.id === action.payload.marketId);
+      console.log('Found market:', market);
+      
       if (market) {
         market.bets = [...market.bets, action.payload];
+        console.log('Updated market bets:', market.bets);
         saveMarketsToStorage(state.markets);
+        console.log('Markets saved to storage');
+        
+        // User bets'i ayrıca sakla
+        const userBets = loadUserBetsFromStorage();
+        console.log('Current userBets from storage:', userBets);
+        
+        if (!userBets[action.payload.userId]) {
+          userBets[action.payload.userId] = [];
+          console.log('Created new user array for:', action.payload.userId);
+        }
+        
+        userBets[action.payload.userId].push(action.payload);
+        console.log('Added bet to user bets:', userBets[action.payload.userId]);
+        
+        saveUserBetsToStorage(userBets);
+        console.log('User bets saved to storage');
+        console.log('=== End addBet Reducer Debug ===');
+      } else {
+        console.error('Market not found for bet:', action.payload.marketId);
       }
     },
     closeMarket(state, action: PayloadAction<{ marketId: string; result: BetSide }>) {
@@ -102,6 +144,19 @@ const marketsSlice = createSlice({
         market.status = "resolved";
         market.result = action.payload.result;
         saveMarketsToStorage(state.markets);
+        
+        // User bets'i güncelle
+        const userBets = loadUserBetsFromStorage();
+        Object.keys(userBets).forEach(userId => {
+          userBets[userId] = userBets[userId].map((bet: any) => {
+            if (bet.marketId === action.payload.marketId) {
+              return { ...bet, marketStatus: 'resolved', marketResult: action.payload.result };
+            }
+            return bet;
+          });
+        });
+        saveUserBetsToStorage(userBets);
+        
         // Payout hesapla
         const totalPool = market.initialPool + market.bets.reduce((sum, b) => sum + b.amount, 0);
         const winners = market.bets.filter(b => b.side === action.payload.result);
@@ -135,6 +190,43 @@ const marketsSlice = createSlice({
 });
 
 export const { addMarket, addBet, closeMarket, claimReward, setUserDefiQ } = marketsSlice.actions;
+
+// On-chain marketleri çekip listeye yaz (txHash dahil)
+export const syncOnChainMarkets = createAsyncThunk(
+  'markets/syncOnChainMarkets',
+  async (_, { dispatch, getState }) => {
+    const onchain = await solidityClient.fetchOnChainMarkets();
+    // DEMO verisini tamamen zincir verisiyle değiştir
+    const mapped: Market[] = onchain.map(m => ({
+      id: String(m.id),
+      title: m.title,
+      description: m.description,
+      creatorId: m.creator || 'onchain',
+      createdAt: m.createdAt * 1000,
+      closesAt: m.closesAt * 1000,
+      initialPool: 0,
+      minBet: 0,
+      maxBet: 0,
+      status: 'open',
+      bets: [],
+      txHash: m.txHash,
+    }));
+    // localStorage'daki bahisleri geri yükle
+    try {
+      const stored = loadMarketsFromStorage();
+      if (stored && Array.isArray(stored)) {
+        const betMap: Record<string, any[]> = {};
+        stored.forEach((sm: any) => {
+          if (Array.isArray(sm.bets) && sm.bets.length) betMap[sm.id] = sm.bets;
+        });
+        mapped.forEach(m => {
+          if (betMap[m.id]) m.bets = betMap[m.id];
+        });
+      }
+    } catch {}
+    dispatch(marketsSlice.actions.setMarkets(mapped));
+  }
+);
 
 // Marketi kapatıp ödülleri otomatik dağıtan thunk
 export const closeMarketAndDistributeRewards = createAsyncThunk(

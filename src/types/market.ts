@@ -6,7 +6,7 @@ export interface Bet {
   id: string;
   userId: string;
   marketId: string;
-  amount: number; // KALE cinsinden
+  amount: number; // ETH cinsinden
   side: BetSide;
   timestamp: number;
 }
@@ -18,10 +18,11 @@ export interface Market {
   creatorId: string;
   createdAt: number;
   closesAt: number;
-  initialPool: number; // Market açılışında eklenen KALE
+  initialPool: number; // Market açılışında eklenen ETH
   minBet: number;
   maxBet: number;
   status: MarketStatus;
   bets: Bet[];
   result?: BetSide; // Oracle sonucu
+  txHash?: string; // Transaction hash for creation
 } 

@@ -1,14 +1,23 @@
 "use client";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/store";
 import { MarketCard } from "@/components/MarketCard";
 import styled from "styled-components";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FaFire, FaFilter, FaChartLine, FaClock, FaCheckCircle } from 'react-icons/fa';
 
 export default function HomePage() {
   const [filter, setFilter] = useState<"open" | "closed" | "all">("open");
+  const dispatch = useDispatch();
   const markets = useSelector((state: RootState) => state.markets.markets);
+
+  useEffect(() => {
+    // Legacy local markets clear to ensure new KALE seed markets show
+    try { 
+      localStorage.removeItem('umiq_markets'); 
+      // KALE markets'i koru, sadece eski UMIQ markets'i temizle
+    } catch {}
+  }, []);
   const filteredMarkets = markets.filter(m =>
     filter === "all" ? true : filter === "open" ? m.status === "open" : m.status !== "open"
   );
@@ -62,7 +71,7 @@ export default function HomePage() {
               <FaFire />
             </StatIcon>
             <StatContent>
-              <StatValue>{totalPool.toFixed(1)} ETH</StatValue>
+              <StatValue>{totalPool.toFixed(1)} KALE</StatValue>
               <StatLabel>Total Pool</StatLabel>
             </StatContent>
           </StatItem>

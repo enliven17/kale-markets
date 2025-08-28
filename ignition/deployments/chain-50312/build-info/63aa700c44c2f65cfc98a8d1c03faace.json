@@ -1,0 +1,246 @@
+{
+  "id": "63aa700c44c2f65cfc98a8d1c03faace",
+  "_format": "hh-sol-build-info-1",
+  "solcVersion": "0.8.28",
+  "solcLongVersion": "0.8.28+commit.7893614a",
+  "input": {
+    "language": "Solidity",
+    "sources": {
+      "contracts/MinimalContract.sol": {
+        "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.22;\n\ncontract MinimalContract {\n    uint256 public value;\n    \n    constructor() {\n        value = 42;\n    }\n}\n"
+      }
+    },
+    "settings": {
+      "viaIR": true,
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "evmVersion": "paris",
+      "outputSelection": {
+        "*": {
+          "*": [
+            "abi",
+            "evm.bytecode",
+            "evm.deployedBytecode",
+            "evm.methodIdentifiers",
+            "metadata"
+          ],
+          "": [
+            "ast"
+          ]
+        }
+      }
+    }
+  },
+  "output": {
+    "sources": {
+      "contracts/MinimalContract.sol": {
+        "ast": {
+          "absolutePath": "contracts/MinimalContract.sol",
+          "exportedSymbols": {
+            "MinimalContract": [
+              12
+            ]
+          },
+          "id": 13,
+          "license": "MIT",
+          "nodeType": "SourceUnit",
+          "nodes": [
+            {
+              "id": 1,
+              "literals": [
+                "solidity",
+                "^",
+                "0.8",
+                ".22"
+              ],
+              "nodeType": "PragmaDirective",
+              "src": "32:24:0"
+            },
+            {
+              "abstract": false,
+              "baseContracts": [],
+              "canonicalName": "MinimalContract",
+              "contractDependencies": [],
+              "contractKind": "contract",
+              "fullyImplemented": true,
+              "id": 12,
+              "linearizedBaseContracts": [
+                12
+              ],
+              "name": "MinimalContract",
+              "nameLocation": "67:15:0",
+              "nodeType": "ContractDefinition",
+              "nodes": [
+                {
+                  "constant": false,
+                  "functionSelector": "3fa4f245",
+                  "id": 3,
+                  "mutability": "mutable",
+                  "name": "value",
+                  "nameLocation": "104:5:0",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 12,
+                  "src": "89:20:0",
+                  "stateVariable": true,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 2,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "89:7:0",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "public"
+                },
+                {
+                  "body": {
+                    "id": 10,
+                    "nodeType": "Block",
+                    "src": "134:27:0",
+                    "statements": [
+                      {
+                        "expression": {
+                          "id": 8,
+                          "isConstant": false,
+                          "isLValue": false,
+                          "isPure": false,
+                          "lValueRequested": false,
+                          "leftHandSide": {
+                            "id": 6,
+                            "name": "value",
+                            "nodeType": "Identifier",
+                            "overloadedDeclarations": [],
+                            "referencedDeclaration": 3,
+                            "src": "144:5:0",
+                            "typeDescriptions": {
+                              "typeIdentifier": "t_uint256",
+                              "typeString": "uint256"
+                            }
+                          },
+                          "nodeType": "Assignment",
+                          "operator": "=",
+                          "rightHandSide": {
+                            "hexValue": "3432",
+                            "id": 7,
+                            "isConstant": false,
+                            "isLValue": false,
+                            "isPure": true,
+                            "kind": "number",
+                            "lValueRequested": false,
+                            "nodeType": "Literal",
+                            "src": "152:2:0",
+                            "typeDescriptions": {
+                              "typeIdentifier": "t_rational_42_by_1",
+                              "typeString": "int_const 42"
+                            },
+                            "value": "42"
+                          },
+                          "src": "144:10:0",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_uint256",
+                            "typeString": "uint256"
+                          }
+                        },
+                        "id": 9,
+                        "nodeType": "ExpressionStatement",
+                        "src": "144:10:0"
+                      }
+                    ]
+                  },
+                  "id": 11,
+                  "implemented": true,
+                  "kind": "constructor",
+                  "modifiers": [],
+                  "name": "",
+                  "nameLocation": "-1:-1:-1",
+                  "nodeType": "FunctionDefinition",
+                  "parameters": {
+                    "id": 4,
+                    "nodeType": "ParameterList",
+                    "parameters": [],
+                    "src": "131:2:0"
+                  },
+                  "returnParameters": {
+                    "id": 5,
+                    "nodeType": "ParameterList",
+                    "parameters": [],
+                    "src": "134:0:0"
+                  },
+                  "scope": 12,
+                  "src": "120:41:0",
+                  "stateMutability": "nonpayable",
+                  "virtual": false,
+                  "visibility": "public"
+                }
+              ],
+              "scope": 13,
+              "src": "58:105:0",
+              "usedErrors": [],
+              "usedEvents": []
+            }
+          ],
+          "src": "32:132:0"
+        },
+        "id": 0
+      }
+    },
+    "contracts": {
+      "contracts/MinimalContract.sol": {
+        "MinimalContract": {
+          "abi": [
+            {
+              "inputs": [],
+              "stateMutability": "nonpayable",
+              "type": "constructor"
+            },
+            {
+              "inputs": [],
+              "name": "value",
+              "outputs": [
+                {
+                  "internalType": "uint256",
+                  "name": "",
+                  "type": "uint256"
+                }
+              ],
+              "stateMutability": "view",
+              "type": "function"
+            }
+          ],
+          "evm": {
+            "bytecode": {
+              "functionDebugData": {},
+              "generatedSources": [],
+              "linkReferences": {},
+              "object": "60808060405234601857602a600055607a9081601e8239f35b600080fdfe6080806040526004361015601257600080fd5b60003560e01c633fa4f24514602657600080fd5b34603f576000366003190112603f576020906000548152f35b600080fdfea2646970667358221220becaa8d78df14fe8129632682a22f9bdb4122fba27acf91384c139a934812fdd64736f6c634300081c0033",
+              "opcodes": "PUSH1 0x80 DUP1 PUSH1 0x40 MSTORE CALLVALUE PUSH1 0x18 JUMPI PUSH1 0x2A PUSH1 0x0 SSTORE PUSH1 0x7A SWAP1 DUP2 PUSH1 0x1E DUP3 CODECOPY RETURN JUMPDEST PUSH1 0x0 DUP1 REVERT INVALID PUSH1 0x80 DUP1 PUSH1 0x40 MSTORE PUSH1 0x4 CALLDATASIZE LT ISZERO PUSH1 0x12 JUMPI PUSH1 0x0 DUP1 REVERT JUMPDEST PUSH1 0x0 CALLDATALOAD PUSH1 0xE0 SHR PUSH4 0x3FA4F245 EQ PUSH1 0x26 JUMPI PUSH1 0x0 DUP1 REVERT JUMPDEST CALLVALUE PUSH1 0x3F JUMPI PUSH1 0x0 CALLDATASIZE PUSH1 0x3 NOT ADD SLT PUSH1 0x3F JUMPI PUSH1 0x20 SWAP1 PUSH1 0x0 SLOAD DUP2 MSTORE RETURN JUMPDEST PUSH1 0x0 DUP1 REVERT INVALID LOG2 PUSH5 0x6970667358 0x22 SLT KECCAK256 0xBE 0xCA 0xA8 0xD7 DUP14 CALL 0x4F 0xE8 SLT SWAP7 ORIGIN PUSH9 0x2A22F9BDB4122FBA27 0xAC 0xF9 SGT DUP5 0xC1 CODECOPY 0xA9 CALLVALUE DUP2 0x2F 0xDD PUSH5 0x736F6C6343 STOP ADDMOD SHR STOP CALLER ",
+              "sourceMap": "58:105:0:-:0;;;;;;;152:2;144:10;58:105;;;;;;;;;;;"
+            },
+            "deployedBytecode": {
+              "functionDebugData": {},
+              "generatedSources": [],
+              "immutableReferences": {},
+              "linkReferences": {},
+              "object": "6080806040526004361015601257600080fd5b60003560e01c633fa4f24514602657600080fd5b34603f576000366003190112603f576020906000548152f35b600080fdfea2646970667358221220becaa8d78df14fe8129632682a22f9bdb4122fba27acf91384c139a934812fdd64736f6c634300081c0033",
+              "opcodes": "PUSH1 0x80 DUP1 PUSH1 0x40 MSTORE PUSH1 0x4 CALLDATASIZE LT ISZERO PUSH1 0x12 JUMPI PUSH1 0x0 DUP1 REVERT JUMPDEST PUSH1 0x0 CALLDATALOAD PUSH1 0xE0 SHR PUSH4 0x3FA4F245 EQ PUSH1 0x26 JUMPI PUSH1 0x0 DUP1 REVERT JUMPDEST CALLVALUE PUSH1 0x3F JUMPI PUSH1 0x0 CALLDATASIZE PUSH1 0x3 NOT ADD SLT PUSH1 0x3F JUMPI PUSH1 0x20 SWAP1 PUSH1 0x0 SLOAD DUP2 MSTORE RETURN JUMPDEST PUSH1 0x0 DUP1 REVERT INVALID LOG2 PUSH5 0x6970667358 0x22 SLT KECCAK256 0xBE 0xCA 0xA8 0xD7 DUP14 CALL 0x4F 0xE8 SLT SWAP7 ORIGIN PUSH9 0x2A22F9BDB4122FBA27 0xAC 0xF9 SGT DUP5 0xC1 CODECOPY 0xA9 CALLVALUE DUP2 0x2F 0xDD PUSH5 0x736F6C6343 STOP ADDMOD SHR STOP CALLER ",
+              "sourceMap": "58:105:0:-:0;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;-1:-1:-1;;58:105:0;;;;;;;;;;;;;;"
+            },
+            "methodIdentifiers": {
+              "value()": "3fa4f245"
+            }
+          },
+          "metadata": "{\"compiler\":{\"version\":\"0.8.28+commit.7893614a\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[],\"name\":\"value\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/MinimalContract.sol\":\"MinimalContract\"},\"evmVersion\":\"paris\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[],\"viaIR\":true},\"sources\":{\"contracts/MinimalContract.sol\":{\"keccak256\":\"0x651ba1b5034f31608410fb7b39ec1ad2d263edab3f2e0d552964d3358cae883e\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://55664ee52ab4aefa0f430c270f7264fb416a15fceb228c9c6803b2dbd6e70d67\",\"dweb:/ipfs/Qma5d3YXgoeu4CEPk4fxBc5BDWk3Z2g3bh5LzNP8i3puUd\"]}},\"version\":1}"
+        }
+      }
+    }
+  }
+}

@@ -1,12 +1,12 @@
 "use client";
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 import { useDispatch } from 'react-redux';
 import { setUserDefiQ } from '@/store/marketsSlice';
-import { connectWallet as connectWalletAction, disconnectWallet as disconnectWalletAction } from '@/store/walletSlice';
+import { connectWallet as connectWalletAction } from '@/store/walletSlice';
+import { getWalletKit } from '@/api/walletKit';
+import type { ISupportedWallet } from '@creit.tech/stellar-wallets-kit';
 import { useWalletConnection } from '@/hooks/useWalletConnection';
-import { StellarWalletsKit } from '@creit.tech/stellar-wallets-kit';
-import * as Freighter from '@stellar/freighter-api';
 
 function shortenAddress(address: string) {
   return address.slice(0, 6) + '...' + address.slice(-4);
@@ -14,52 +14,62 @@ function shortenAddress(address: string) {
 
 export function ConnectWalletButton() {
   const [error, setError] = useState<string | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
   const dispatch = useDispatch();
   const { address, isConnected } = useWalletConnection();
-  const kit = useMemo(() => {
-    if (typeof window === 'undefined') return null;
-    try {
-      const instance = new StellarWalletsKit({
-        network: 'TESTNET',
-      });
-      return instance;
-    } catch {
-      return null;
-    }
-  }, []);
 
-  const connectWallet = async () => {
+  const connectStellar = async () => {
+    if (isConnecting) return; // Zaten bağlanmaya çalışıyorsa çık
+    
     setError(null);
+    setIsConnecting(true);
+    
     try {
-      // Prefer Freighter for a smooth UX; fall back to Kit modal
-      let userAddress: string | undefined;
-      const hasFreighter = await Freighter.isConnected().catch(() => false);
-      if (hasFreighter) {
-        await Freighter.requestAccess();
-        userAddress = await Freighter.getPublicKey();
-      }
-      if (!userAddress && kit) {
-        const res = await kit.openModal();
-        if (res && res.publicKey) userAddress = res.publicKey;
-      }
-      if (!userAddress) {
-        setError('No Stellar wallet connected. Please install Freighter or use a supported wallet.');
+      const kit = getWalletKit();
+      
+      // Modal zaten açıksa yeni modal açma
+      if (kit.isModalOpen && kit.isModalOpen()) {
+        setIsConnecting(false);
         return;
       }
-      // DeFiQ puanını localStorage'dan kontrol et
-      const existingDefiQ = localStorage.getItem(`defiq_${userAddress}`);
+      
+      const selected: ISupportedWallet | null = await new Promise(async (resolve, reject) => {
+        try {
+          await kit.openModal({
+            onWalletSelected: (option: ISupportedWallet) => resolve(option),
+            onClosed: () => resolve(null),
+            modalTitle: 'Connect Stellar Wallet',
+          });
+        } catch (e) {
+          resolve(null);
+        }
+      });
+      
+      if (!selected) {
+        setIsConnecting(false);
+        return;
+      }
+      
+      await kit.setWallet(selected.id);
+      try { localStorage.setItem('stellar_selected_wallet_id', String(selected.id)); } catch {}
+      
+      const { address: pubKey } = await kit.getAddress();
+      const existingDefiQ = localStorage.getItem(`defiq_${pubKey}`);
       let defiQScore: number;
       if (existingDefiQ) {
         defiQScore = Number(existingDefiQ);
       } else {
         defiQScore = Math.floor(Math.random() * 151) + 50;
-        localStorage.setItem(`defiq_${userAddress}`, String(defiQScore));
+        localStorage.setItem(`defiq_${pubKey}`, String(defiQScore));
       }
-      dispatch(connectWalletAction(userAddress));
-      dispatch(setUserDefiQ({ address: userAddress, score: defiQScore }));
-    } catch (error: unknown) {
-      console.error('Wallet connection error:', error);
-      setError('Connection rejected or an error occurred.');
+      
+      dispatch(connectWalletAction({ address: pubKey, chain: 'STELLAR' }));
+      dispatch(setUserDefiQ({ address: pubKey, score: defiQScore }));
+    } catch (e) {
+      console.error(e);
+      setError('Stellar wallet connection failed.');
+    } finally {
+      setIsConnecting(false);
     }
   };
 
@@ -67,11 +77,12 @@ export function ConnectWalletButton() {
     if (address) {
       dispatch(setUserDefiQ({ address, score: 0 }));
       localStorage.removeItem(`defiq_${address}`);
-      dispatch(disconnectWalletAction());
-      setError(null);
+      localStorage.removeItem('stellar_selected_wallet_id');
     }
     setError(null);
   };
+
+  const closeModal = () => setError(null);
 
   return (
     <>
@@ -82,12 +93,26 @@ export function ConnectWalletButton() {
             <DisconnectButton onClick={disconnectWallet} title="Disconnect from app (to fully disconnect, use your wallet UI)">Disconnect</DisconnectButton>
           </ConnectedBox>
         ) : (
-          <CustomButton onClick={connectWallet}>
-            Connect Wallet
-          </CustomButton>
+          <div style={{display:'flex',gap:8,alignItems:'center'}}>
+            <CustomButton onClick={connectStellar} disabled={isConnecting}>
+              {isConnecting ? 'Connecting...' : 'Connect Stellar'}
+            </CustomButton>
+          </div>
         )}
       </ModernConnectButtonWrapper>
-      {error && <ErrorBox>{error}</ErrorBox>}
+
+      {error && (
+        <ModalOverlay role="dialog" aria-modal="true">
+          <ModalContent>
+            <ModalTitle>Wallet Connection</ModalTitle>
+            <ModalMessage>{error}</ModalMessage>
+            <ModalActions>
+              <SecondaryButton onClick={closeModal}>Close</SecondaryButton>
+              <PrimaryButton onClick={connectStellar}>Try Again</PrimaryButton>
+            </ModalActions>
+          </ModalContent>
+        </ModalOverlay>
+      )}
     </>
   );
 }
@@ -166,9 +191,61 @@ const DisconnectButton = styled.button`
   }
 `;
 
-const ErrorBox = styled.div`
-  color: ${({ theme }) => theme.colors.accentRed};
-  font-size: 0.95rem;
-  margin-top: 8px;
-  text-align: center;
+const ModalOverlay = styled.div`
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 24px;
+  z-index: 1000;
+`;
+
+const ModalContent = styled.div`
+  width: 100%;
+  max-width: 420px;
+  background: ${({ theme }) => theme.colors.card || '#111'};
+  color: ${({ theme }) => theme.colors.text || '#fff'};
+  border: 1px solid ${({ theme }) => theme.colors.border || 'rgba(255,255,255,0.1)'};
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+  padding: 18px;
+`;
+
+const ModalTitle = styled.h3`
+  margin: 0 0 8px 0;
+  font-size: 1.1rem;
+`;
+
+const ModalMessage = styled.p`
+  margin: 0 0 16px 0;
+  font-size: 0.98rem;
+  line-height: 1.4;
+`;
+
+const ModalActions = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+`;
+
+const PrimaryButton = styled.button`
+  background: ${({ theme }) => theme.colors.primary};
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-weight: 600;
+  cursor: pointer;
+`;
+
+const SecondaryButton = styled.button`
+  background: transparent;
+  color: ${({ theme }) => theme.colors.text || '#fff'};
+  border: 1px solid ${({ theme }) => theme.colors.border || 'rgba(255,255,255,0.25)'};
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-weight: 600;
+  cursor: pointer;
 `;

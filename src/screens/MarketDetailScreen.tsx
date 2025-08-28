@@ -102,14 +102,14 @@ export default function MarketDetailScreen() {
     setSuccess("");
     const betAmount = Number(amount);
     if (isNaN(betAmount) || betAmount < market.minBet || betAmount > market.maxBet) {
-      setError(`Bet amount must be between ${market.minBet} - ${market.maxBet} ETH.`);
+      setError(`Bet amount must be between ${market.minBet} - ${market.maxBet} KALE.`);
       return;
     }
     if (!isConnected || !connectedAddress) {
       setError("Wallet is not connected.");
       return;
     }
-    setReview(true);
+    setReview(true)
   };
 
   // Yeni: Onayla butonu
@@ -124,7 +124,7 @@ export default function MarketDetailScreen() {
     
     const betAmount = Number(amount);
     if (isNaN(betAmount) || betAmount < market.minBet || betAmount > market.maxBet) {
-      setError(`Bet amount must be between ${market.minBet} - ${market.maxBet} ETH.`);
+      setError(`Bet amount must be between ${market.minBet} - ${market.maxBet} KALE.`);
       return;
     }
     
@@ -330,7 +330,7 @@ export default function MarketDetailScreen() {
               <InfoCard>
                 <FaCoins />
                 <InfoCardContent>
-                  <InfoCardValue>{totalPool.toFixed(2)} ETH</InfoCardValue>
+                  <InfoCardValue>{totalPool.toFixed(2)} KALE</InfoCardValue>
                   <InfoCardLabel>Total Pool</InfoCardLabel>
                 </InfoCardContent>
               </InfoCard>
@@ -351,8 +351,8 @@ export default function MarketDetailScreen() {
             </InfoCards>
             <BetStatsRow>
               <PieChart yes={totalYes} no={totalNo} />
-              <BetStat $color="green">Yes: {totalYes.toFixed(4)} ETH</BetStat>
-              <BetStat $color="red">No: {totalNo.toFixed(4)} ETH</BetStat>
+              <BetStat $color="green">Yes: {totalYes.toFixed(4)} KALE</BetStat>
+              <BetStat $color="red">No: {totalNo.toFixed(4)} KALE</BetStat>
             </BetStatsRow>
           </UnifiedLeft>
           <UnifiedRight>
@@ -362,7 +362,7 @@ export default function MarketDetailScreen() {
                   <BetForm onSubmit={handleReview}>
                     <FormRow>
                       <FormCol>
-                        <FormLabel>Bet Amount (ETH)</FormLabel>
+                        <FormLabel>Bet Amount (KALE)</FormLabel>
                         <FormInput
                           type="number"
                           step="0.001"
@@ -372,8 +372,8 @@ export default function MarketDetailScreen() {
                           onChange={e => {
                             const val = Number(e.target.value);
                             setAmount(e.target.value);
-                            if (val < MIN_BET) setError(`Minimum bet is ${MIN_BET} ETH`);
-                            else if (val > MAX_BET) setError(`Maximum bet is ${MAX_BET} ETH`);
+                                    if (val < MIN_BET) setError(`Minimum bet is ${MIN_BET} KALE`);
+        else if (val > MAX_BET) setError(`Maximum bet is ${MAX_BET} KALE`);
                             else setError("");
                           }}
                           required
@@ -408,12 +408,12 @@ export default function MarketDetailScreen() {
                     <ReviewTitle>Review Your Bet</ReviewTitle>
                     <ReviewItem><b>Market:</b> {market.title}</ReviewItem>
                     <ReviewItem><b>Side:</b> {side === "yes" ? "Yes" : "No"}</ReviewItem>
-                    <ReviewItem><b>Amount:</b> {amount} ETH</ReviewItem>
+                    <ReviewItem><b>Amount:</b> {amount} KALE</ReviewItem>
                     <ReviewItem><b>Potential Win:</b> {/* Potansiyel kazanç hesapla */}
                       {(() => {
                         const odds = side === "yes" ? 2.273 : 1.754;
                         const betAmount = Number(amount);
-                        return `${(betAmount * odds).toFixed(4)} ETH`;
+                        return `${(betAmount * odds).toFixed(4)} KALE`;
                       })()}
                     </ReviewItem>
                     {error && <ErrorBox><FaTimesCircle /> {error}</ErrorBox>}
@@ -435,7 +435,7 @@ export default function MarketDetailScreen() {
                   </ResolvedBox>
                   {myReward && !myReward.claimed && (
                     <ClaimBox>
-                      <FaCoins /> Your reward: <b>{myReward.amount.toFixed(4)} ETH</b>
+                      <FaCoins /> Your reward: <b>{myReward.amount.toFixed(4)} KALE</b>
                       <ClaimButton onClick={handleClaim}>Claim Reward</ClaimButton>
                     </ClaimBox>
                   )}
@@ -462,7 +462,7 @@ export default function MarketDetailScreen() {
                   {market.bets.map(bet => (
                     <BetRow key={bet.id}>
                       <BetSideBadge $side={bet.side}>{bet.side === "yes" ? "YES" : "NO"}</BetSideBadge>
-                      <BetAmount>{bet.amount} ETH</BetAmount>
+                      <BetAmount>{bet.amount} KALE</BetAmount>
                       <BetDate>{new Date(bet.timestamp).toLocaleString()}</BetDate>
                     </BetRow>
                   ))}

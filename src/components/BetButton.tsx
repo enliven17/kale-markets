@@ -2,8 +2,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { useWalletConnection } from '@/hooks/useWalletConnection';
-import * as Freighter from '@stellar/freighter-api';
-import { KALE_CONTRACT_IDS } from '@/config/umiChain';
+import { ethers } from 'ethers';
 import { FaCoins, FaCheck, FaTimes, FaSpinner } from 'react-icons/fa';
 
 interface BetButtonProps {
@@ -45,24 +44,44 @@ export function BetButton({ marketId, prediction, minBet, maxBet, onBetPlaced }:
     const maxBetNum = Number(maxBet);
     
     if (amount < minBetNum) {
-      setError(`Minimum bet amount is ${minBetNum} ETH.`);
+              setError(`Minimum bet amount is ${minBetNum} KALE.`);
       setIsLoading(false);
       return;
     }
     
     if (amount > maxBetNum) {
-      setError(`Maximum bet amount is ${maxBetNum} ETH.`);
+              setError(`Maximum bet amount is ${maxBetNum} KALE.`);
+      setIsLoading(false);
+      return;
+    }
+    
+    if (!window.ethereum) {
+      setError('Ethereum wallet not found.');
       setIsLoading(false);
       return;
     }
     
     try {
-      const hasFreighter = await Freighter.isConnected().catch(() => false);
-      if (!hasFreighter) throw new Error('Stellar wallet (Freighter) not found.');
-      const pub = await Freighter.getPublicKey();
-      if (!pub) throw new Error('Unable to get public key from wallet.');
-      const contractId = KALE_CONTRACT_IDS.TESTNET;
-      setSuccess(`(Testnet) Bet request prepared for ${pub} via KALE ${contractId}. Amount: ${amount}`);
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      
+      // Contract address - Umi Devnet
+      const contractAddress = "0x897FBB05A18ceE2d9451a9F644B9831DDf4Dd481";
+      
+      // Contract ABI for placeBet function
+      const contractABI = [
+        "function placeBet(uint256 marketId, bool prediction) external payable"
+      ];
+      
+      const contract = new ethers.Contract(contractAddress, contractABI, signer);
+      
+      const tx = await contract.placeBet(
+        marketId,
+        prediction,
+        { value: ethers.parseEther(betAmount) }
+      );
+      
+      setSuccess(`Bet placed successfully! Transaction hash: ${tx.hash}`);
       setBetAmount('');
       setIsOpen(false);
       
@@ -194,7 +213,8 @@ export function BetButton({ marketId, prediction, minBet, maxBet, onBetPlaced }:
             {success && <SuccessMessage>{success}</SuccessMessage>}
             
             <InfoText>
-              <strong>Note:</strong> This bet will be placed on Stellar testnet. Ensure you have KALE and a little XLM for fees.
+              <strong>Note:</strong> This bet will be placed directly on the blockchain. 
+              Make sure you have enough KALE in your wallet to cover the bet amount.
             </InfoText>
           </ModalContent>
         </ModalOverlay>
