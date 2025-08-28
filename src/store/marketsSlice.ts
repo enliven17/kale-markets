@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { Market, Bet, BetSide } from "@/types/market";
 import { creativeSeedMarkets } from "@/constants/seedMarkets";
-import seedTxs from '@/constants/seedTxs.json';
+import { seedTxs } from '@/constants/seedTxs';
 import { RootState } from './index';
 
 // Demo verileri kaldırıldı, başlangıç boş

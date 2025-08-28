@@ -1,8 +1,15 @@
+'use client';
+
 import { StellarWalletsKit, WalletNetwork, allowAllModules } from '@creit.tech/stellar-wallets-kit';
 
 let kitInstance: StellarWalletsKit | null = null;
 
 export const getWalletKit = () => {
+  // Client-side only check
+  if (typeof window === 'undefined') {
+    throw new Error('getWalletKit can only be called on the client side');
+  }
+
   if (!kitInstance) {
     try {
       kitInstance = new StellarWalletsKit({

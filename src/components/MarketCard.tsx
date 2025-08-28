@@ -1,5 +1,4 @@
 import styled from "styled-components";
-import { Market } from "@/types/market";
 // Link kaldırıldı; kart detay sayfasına yönlendirme yok
 import { useState } from "react";
 import { FaClock, FaCheckCircle, FaTimesCircle, FaCoins, FaUsers, FaCalendarAlt, FaChartLine } from 'react-icons/fa';

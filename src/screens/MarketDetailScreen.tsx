@@ -5,7 +5,6 @@ import { useSelector, useDispatch } from "react-redux";
 import type { AppDispatch } from '@/store';
 import { RootState } from "@/store";
 import { addBet, closeMarket, claimReward } from "@/store/marketsSlice";
-import { closeMarketAndDistributeRewards } from "@/store/marketsSlice";
 
 import { Market, BetSide } from "@/types/market";
 import styled from "styled-components";
@@ -144,7 +143,7 @@ export default function MarketDetailScreen() {
 
   const handleCloseMarket = (result: BetSide) => {
     if (!market.id) return;
-    dispatch(closeMarketAndDistributeRewards({ marketId: String(market.id), result }));
+    dispatch(closeMarket({ marketId: String(market.id), result }));
   };
 
   const handleClaim = () => {

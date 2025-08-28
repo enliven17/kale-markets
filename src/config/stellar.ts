@@ -1,3 +1,5 @@
+'use client';
+
 import { Horizon, Networks, Asset } from "@stellar/stellar-sdk";
 
 export type StellarNetworkName = "TESTNET" | "PUBLIC";
@@ -12,8 +14,13 @@ export const STELLAR_NETWORK_PASSPHRASE: Record<StellarNetworkName, string> = {
   PUBLIC: Networks.PUBLIC,
 };
 
-export const getStellarServer = (network: StellarNetworkName) =>
-  new Horizon.Server(STELLAR_HORIZON_URL[network]);
+export const getStellarServer = (network: StellarNetworkName) => {
+  // Client-side only check
+  if (typeof window === 'undefined') {
+    throw new Error('getStellarServer can only be called on the client side');
+  }
+  return new Horizon.Server(STELLAR_HORIZON_URL[network]);
+};
 
 // KALE asset config (issuer to be confirmed from KALE docs)
 // See: https://kaleonstellar.com/ and https://github.com/kalepail/KALE-sc

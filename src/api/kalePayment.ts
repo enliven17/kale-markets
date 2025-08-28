@@ -1,3 +1,5 @@
+'use client';
+
 import { Asset, Operation, TransactionBuilder, BASE_FEE, Horizon, Memo } from "@stellar/stellar-sdk";
 import { getKaleAsset, STELLAR_NETWORK_PASSPHRASE, getKaleIssuer } from "@/config/stellar";
 import { getWalletKit } from "@/api/walletKit";
@@ -10,6 +12,11 @@ type KalePaymentParams = {
 };
 
 export async function submitKalePaymentOnMainnet(params: KalePaymentParams) {
+  // Client-side only check
+  if (typeof window === 'undefined') {
+    throw new Error('This function can only be called on the client side');
+  }
+
   try {
     console.log('=== KALE Payment Debug Start ===');
     

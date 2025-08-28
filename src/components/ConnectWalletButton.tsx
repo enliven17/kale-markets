@@ -27,12 +27,6 @@ export function ConnectWalletButton() {
     try {
       const kit = getWalletKit();
       
-      // Modal zaten açıksa yeni modal açma
-      if (kit.isModalOpen && kit.isModalOpen()) {
-        setIsConnecting(false);
-        return;
-      }
-      
       const selected: ISupportedWallet | null = await new Promise(async (resolve, reject) => {
         try {
           await kit.openModal({
