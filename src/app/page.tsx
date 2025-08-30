@@ -1,6 +1,7 @@
 "use client";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/store";
+import { refreshMarkets } from "@/store/marketsSlice";
 import { MarketCard } from "@/components/MarketCard";
 import styled from "styled-components";
 import { useEffect, useState } from "react";
@@ -17,7 +18,10 @@ export default function HomePage() {
       localStorage.removeItem('umiq_markets'); 
       // KALE markets'i koru, sadece eski UMIQ markets'i temizle
     } catch {}
-  }, []);
+    
+    // Markets'i refresh et ki txHash'ler yüklensin
+    dispatch(refreshMarkets());
+  }, [dispatch]);
   const filteredMarkets = markets.filter(m =>
     filter === "all" ? true : filter === "open" ? m.status === "open" : m.status !== "open"
   );

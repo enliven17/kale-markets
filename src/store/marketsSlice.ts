@@ -63,18 +63,30 @@ function saveUserBetsToStorage(userBets: Record<string, Bet[]>) {
 // localStorage'dan stored markets yükle veya seed markets kullan
 function getInitialMarkets(): Market[] {
   const stored = loadMarketsFromStorage();
-  if (stored && Array.isArray(stored) && stored.length > 0) {
-    console.log('Loading markets from localStorage:', stored);
-    return stored;
-  }
   
-  console.log('No stored markets found, using seed markets');
-  // İlk kez çalıştırılıyorsa seed markets'i kullan
+  // Her zaman seed markets'i kullan ve txHash'leri ekle
   const seedMarkets = creativeSeedMarkets.map((m) => {
-    const tx = (seedTxs as any[]).find((t) => t.id === m.id)?.tx;
+    const tx = seedTxs.find((t) => t.id === m.id)?.tx;
     return { ...m, txHash: tx, bets: [] } as any;
   });
   
+  if (stored && Array.isArray(stored) && stored.length > 0) {
+    console.log('Loading markets from localStorage and preserving bets');
+    // Stored markets'ten bet'leri al ve seed markets'e ekle
+    const marketsWithBets = seedMarkets.map((seedMarket) => {
+      const storedMarket = stored.find((s) => s.id === seedMarket.id);
+      if (storedMarket && storedMarket.bets) {
+        return { ...seedMarket, bets: storedMarket.bets };
+      }
+      return seedMarket;
+    });
+    
+    // localStorage'ı güncelle
+    saveMarketsToStorage(marketsWithBets);
+    return marketsWithBets;
+  }
+  
+  console.log('No stored markets found, using seed markets');
   // localStorage'a seed markets'i kaydet
   saveMarketsToStorage(seedMarkets);
   console.log('Seed markets saved to localStorage');
@@ -190,11 +202,30 @@ const marketsSlice = createSlice({
     },
     setUserDefiQ(state, action: PayloadAction<{ address: string; score: number }>) {
       state.userDefiQ[action.payload.address] = action.payload.score;
+    },
+    refreshMarkets(state) {
+      // Seed markets'i yeniden yükle ve txHash'leri ekle
+      const seedMarkets = creativeSeedMarkets.map((m) => {
+        const tx = seedTxs.find((t) => t.id === m.id)?.tx;
+        return { ...m, txHash: tx, bets: [] } as any;
+      });
+      
+      // Mevcut bet'leri koru
+      const marketsWithBets = seedMarkets.map((seedMarket) => {
+        const existingMarket = state.markets.find((s) => s.id === seedMarket.id);
+        if (existingMarket && existingMarket.bets) {
+          return { ...seedMarket, bets: existingMarket.bets };
+        }
+        return seedMarket;
+      });
+      
+      state.markets = marketsWithBets;
+      saveMarketsToStorage(marketsWithBets);
     }
   }
 });
 
-export const { addMarket, addBet, closeMarket, claimReward, setUserDefiQ } = marketsSlice.actions;
+export const { addMarket, addBet, closeMarket, claimReward, setUserDefiQ, refreshMarkets } = marketsSlice.actions;
 
 export default marketsSlice.reducer;
 export type { ClaimableReward }; 
