@@ -1,7 +1,7 @@
 import styled from "styled-components";
 // Link kaldırıldı; kart detay sayfasına yönlendirme yok
 import { useState } from "react";
-import { FaClock, FaCheckCircle, FaTimesCircle, FaCoins, FaUsers, FaCalendarAlt, FaChartLine } from 'react-icons/fa';
+import { FaClock, FaCheckCircle, FaTimesCircle, FaCoins, FaUsers, FaCalendarAlt, FaChartLine, FaCheck } from 'react-icons/fa';
 import { useWalletConnection } from '@/hooks/useWalletConnection';
 import { useDispatch, useSelector } from 'react-redux';
 import { addBet } from '@/store/marketsSlice';
@@ -21,6 +21,9 @@ export function MarketCard({ market }: Props) {
   const { isConnected, address } = useWalletConnection();
   const [qty, setQty] = useState<number>(1);
   const [loading, setLoading] = useState<false | 'yes' | 'no'>(false);
+  const [showSuccess, setShowSuccess] = useState<false | 'yes' | 'no'>(false);
+  const [showError, setShowError] = useState<string | null>(null);
+  const [txHash, setTxHash] = useState<string | null>(null);
   const dispatch = useDispatch();
 
   // Kart tıklamasında yönlendirme kaldırıldı
@@ -77,6 +80,81 @@ export function MarketCard({ market }: Props) {
     ? `https://stellar.expert/explorer/testnet/tx/${market.txHash}`
     : undefined;
   const shortTx = market.txHash ? `${market.txHash.slice(0, 6)}...${market.txHash.slice(-4)}` : 'contract';
+
+  const handleBet = async (side: 'yes' | 'no') => {
+    if (!address) return;
+    
+    try {
+      setLoading(side);
+      setShowSuccess(false);
+      setShowError(null);
+      setTxHash(null);
+      
+      const result = await submitKalePaymentOnMainnet({
+        destination: getKaleTreasuryAddress(),
+        amount: (qty * 0.5).toFixed(7),
+        memoText: `market:${market.id}:${side}`
+      });
+      
+      // Transaction hash'i al
+      if (result && result.hash) {
+        setTxHash(result.hash);
+        setShowSuccess(side);
+        
+        // 5 saniye sonra success mesajını gizle
+        setTimeout(() => {
+          setShowSuccess(false);
+          setTxHash(null);
+        }, 5000);
+      }
+      
+      // Bet'i Redux store'a ekle
+      const betData = {
+        id: `${market.id}-${side}-${Date.now()}`,
+        userId: address,
+        marketId: String(market.id),
+        amount: qty * 0.5,
+        side: side as BetSide,
+        timestamp: Date.now()
+      };
+      
+      dispatch(addBet(betData));
+      
+      console.log('Bet successful:', { side, amount: qty * 0.5, txHash: result.hash });
+      
+    } catch (error) {
+      console.error('Bet failed:', error);
+      
+      // Kullanıcı dostu hata mesajları
+      let errorMessage = 'Bet failed. Please try again.';
+      
+      if (error instanceof Error) {
+        const errorText = error.message.toLowerCase();
+        
+        if (errorText.includes('user rejected') || errorText.includes('cancelled') || errorText.includes('denied')) {
+          errorMessage = 'Transaction was cancelled. No KALE was charged.';
+        } else if (errorText.includes('insufficient') || errorText.includes('balance')) {
+          errorMessage = 'Insufficient KALE balance. Please check your wallet.';
+        } else if (errorText.includes('network') || errorText.includes('connection')) {
+          errorMessage = 'Network error. Please check your connection and try again.';
+        } else if (errorText.includes('not found') || errorText.includes('unfunded')) {
+          errorMessage = 'Account not found. Please fund your wallet with XLM first.';
+        } else {
+          errorMessage = `Bet failed: ${error.message}`;
+        }
+      }
+      
+      setShowError(errorMessage);
+      
+      // 5 saniye sonra error mesajını gizle
+      setTimeout(() => {
+        setShowError(null);
+      }, 5000);
+      
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Card onClick={handleCardClick}>
@@ -166,82 +244,48 @@ export function MarketCard({ market }: Props) {
           </Info>
         </InfoRow>
 
+        {/* Success Notification */}
+        {showSuccess && (
+          <SuccessNotification>
+            <FaCheck />
+            <div>
+              <strong>Bet Successful!</strong>
+              <p>Your {showSuccess.toUpperCase()} bet of {qty * 0.5} KALE has been placed.</p>
+              {txHash && (
+                <p>
+                  <strong>Transaction:</strong>{' '}
+                  <a 
+                    href={`https://stellar.expert/explorer/public/tx/${txHash}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                  >
+                    {txHash.slice(0, 8)}...{txHash.slice(-8)}
+                  </a>
+                </p>
+              )}
+            </div>
+          </SuccessNotification>
+        )}
+        
+        {/* Error Notification */}
+        {showError && (
+          <ErrorNotification>
+            <FaTimesCircle />
+            <div>
+              <strong>Bet Cancelled</strong>
+              <p>{showError}</p>
+            </div>
+          </ErrorNotification>
+        )}
+
         <BuyRow>
           <QtyInput type="number" min={1} value={qty} onChange={(e) => setQty(Math.max(1, Number(e.target.value)))} />
-          <BuyButton disabled={!isConnected || loading !== false} onClick={async (e) => { 
-            e.stopPropagation(); 
-            try { 
-              setLoading('yes'); 
-              await submitKalePaymentOnMainnet({ 
-                destination: getKaleTreasuryAddress(), 
-                amount: (qty * 0.5).toFixed(7), 
-                memoText: `market:${market.id}:yes` 
-              }); 
-              
-              // Bet'i gerçek wallet address ile ekle
-              if (address) {
-                const betData = { 
-                  id: `${market.id}-yes-${Date.now()}`, 
-                  userId: address, 
-                  marketId: String(market.id), 
-                  amount: qty * 0.5, 
-                  side: 'yes' as BetSide, 
-                  timestamp: Date.now() 
-                };
-                
-                console.log('Creating bet with data:', betData);
-                dispatch(addBet(betData)); 
-                console.log('Bet added to store:', { marketId: market.id, side: 'yes', amount: qty * 0.5, userId: address });
-                
-                // localStorage'ı manuel olarak kontrol et
-                setTimeout(() => {
-                  const stored = localStorage.getItem('kale_user_bets');
-                  console.log('localStorage after bet creation:', stored);
-                }, 100);
-              } else {
-                console.error('No wallet address available for bet');
-              }
-            } finally { 
-              setLoading(false); 
-            } 
-          }}>Buy YES</BuyButton>
-          <BuyButton disabled={!isConnected || loading !== false} onClick={async (e) => { 
-            e.stopPropagation(); 
-            try { 
-              setLoading('no'); 
-              await submitKalePaymentOnMainnet({ 
-                destination: getKaleTreasuryAddress(), 
-                amount: (qty * 0.5).toFixed(7), 
-                memoText: `market:${market.id}:no` 
-              }); 
-              
-              // Bet'i gerçek wallet address ile ekle
-              if (address) {
-                const betData = { 
-                  id: `${market.id}-no-${Date.now()}`, 
-                  userId: address, 
-                  marketId: String(market.id), 
-                  amount: qty * 0.5, 
-                  side: 'no' as BetSide, 
-                  timestamp: Date.now() 
-                };
-                
-                console.log('Creating bet with data:', betData);
-                dispatch(addBet(betData)); 
-                console.log('Bet added to store:', { marketId: market.id, side: 'no', amount: qty * 0.5, userId: address });
-                
-                // localStorage'ı manuel olarak kontrol et
-                setTimeout(() => {
-                  const stored = localStorage.getItem('kale_user_bets');
-                  console.log('localStorage after bet creation:', stored);
-                }, 100);
-              } else {
-                console.error('No wallet address available for bet');
-              }
-            } finally { 
-              setLoading(false); 
-            } 
-          }}>Buy NO</BuyButton>
+          <BuyButton disabled={!isConnected || loading !== false} onClick={() => handleBet('yes')} loading={loading === 'yes'}>
+            {loading === 'yes' ? 'Processing...' : 'Buy YES'}
+          </BuyButton>
+          <BuyButton disabled={!isConnected || loading !== false} onClick={() => handleBet('no')} loading={loading === 'no'}>
+            {loading === 'no' ? 'Processing...' : 'Buy NO'}
+          </BuyButton>
         </BuyRow>
         <QuickRow>
           {[1,5,10,20].map(v => (
@@ -507,7 +551,7 @@ const QtyInput = styled.input`
   color: ${({ theme }) => theme.colors.text};
 `;
 
-const BuyButton = styled.button`
+const BuyButton = styled.button<{ loading?: boolean }>`
   background: ${({ theme }) => theme.colors.primary};
   color: white;
   border: none;
@@ -518,6 +562,14 @@ const BuyButton = styled.button`
   cursor: pointer;
   transition: all 0.2s ease;
   &:disabled { opacity: 0.5; cursor: not-allowed; }
+  ${props => props.loading && `
+    background: #666;
+    cursor: not-allowed;
+    
+    &:hover {
+      background: #666;
+    }
+  `}
 `;
 
 const QuickRow = styled.div`
@@ -603,6 +655,108 @@ const DisabledButton = styled.button`
   @media (max-width: 600px) {
     padding: 12px 0;
     font-size: 13px;
+  }
+`;
+
+const SuccessNotification = styled.div`
+  background: linear-gradient(135deg, #4CAF50, #45a049);
+  color: white;
+  padding: 16px;
+  border-radius: 8px;
+  margin: 16px 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+  animation: slideIn 0.3s ease-out;
+  
+  svg {
+    font-size: 20px;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+  
+  div {
+    flex: 1;
+    
+    strong {
+      font-size: 16px;
+      display: block;
+      margin-bottom: 4px;
+    }
+    
+    p {
+      margin: 4px 0;
+      font-size: 14px;
+      opacity: 0.9;
+      
+      a {
+        color: #fff;
+        text-decoration: underline;
+        word-break: break-all;
+        
+        &:hover {
+          opacity: 0.8;
+        }
+      }
+    }
+  }
+  
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+`;
+
+const ErrorNotification = styled.div`
+  background: linear-gradient(135deg, #F44336, #D32F2F);
+  color: white;
+  padding: 16px;
+  border-radius: 8px;
+  margin: 16px 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
+  animation: slideIn 0.3s ease-out;
+  
+  svg {
+    font-size: 20px;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+  
+  div {
+    flex: 1;
+    
+    strong {
+      font-size: 16px;
+      display: block;
+      margin-bottom: 4px;
+    }
+    
+    p {
+      margin: 4px 0;
+      font-size: 14px;
+      opacity: 0.9;
+    }
+  }
+  
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 `;
 
